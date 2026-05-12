@@ -1,5 +1,5 @@
 # Movie-Rental-Management-System
-(Excuse the use of AI, I'm too lazy to explain this project; however, this is an adequate breakdown of everything you need to know.)
+(Hello, I'm Saud, and this is my first project!)
 (I'm a second-semester CS freshman who started coding at 18 years of age, so bear with me...)
 
 GO INTO THE APP FOLDER FOR THE MAIN CLASS TO START THE PROGRAM.
