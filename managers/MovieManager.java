@@ -13,156 +13,88 @@ public class MovieManager {
     private final ArrayList<Customer> customers = new ArrayList<>();
     private final ArrayList<Employee> employees = new ArrayList<>();
     private final ArrayList<Renting> rentals = new ArrayList<>();    
-
+    
     public ArrayList<Movie> getMovies() { return movies; }
     public ArrayList<Customer> getCustomers() { return customers; }
     public ArrayList<Employee> getEmployees() { return employees; }
     public ArrayList<Renting> getRentals() { return rentals; }
 
-    // Movie
-    public void addMovie(Movie movie) {
-        movies.add(movie);
-    }
+    // CORE LOGIC
+    public void addMovie(Movie movie) { movies.add(movie); }
 
     public Movie findMovie(String value) {
         for (Movie m : movies) {
-            if (m.getMovieId().equalsIgnoreCase(value) || m.getMovieTitle().equalsIgnoreCase(value)) {
-                return m;
-            }
+            if (m.getMovieId().equalsIgnoreCase(value) || m.getMovieTitle().equalsIgnoreCase(value)) return m;
         }
-        System.out.println("Error: ID/Name invalid or movie doesn't exist.");
+        System.out.println("Error: Movie not found.");
         return null;
     }
 
-    // Customer
-    public void addCustomer(Customer customer) {
-        customers.add(customer);
-    }
+    public void addCustomer(Customer customer) { customers.add(customer); }
 
     public Customer findCustomer(String value) {
         for (Customer c : customers) {
-            if (c.getId().equalsIgnoreCase(value) || c.getName().equalsIgnoreCase(value)) {
-                return c;
-            }
+            if (c.getId().equalsIgnoreCase(value) || c.getName().equalsIgnoreCase(value)) return c;
         }
-        System.out.println("Error: ID/Name invalid or customer doesn't exist.");
+        System.out.println("Error: Customer not found.");
         return null;
     }
 
-    // Employee
+    public boolean rentMovie(String customerVal, String movieVal, int days) {
+        Customer c = findCustomer(customerVal);
+        Movie m = findMovie(movieVal);
 
-    public void addEmployee(Employee employee) {
-        employees.add(employee);
-    }
-
-    public Employee findEmployee(String value) {
-        for (Employee e : employees) {
-            if (e.getId().equalsIgnoreCase(value) || e.getName().equalsIgnoreCase(value)) {
-                return e;
+        if (c != null && m != null) {
+            if (c.getActiveRentals() >= c.getMaxRentals()) {
+                System.out.println("Error: Rental limit reached.");
+                return false;
             }
-        }
-        System.out.println("Error: ID/Name invalid or employee doesn't exist.");
-        return null;
-    }
-    
-    // Renting
-
-    public boolean rentMovie(String customerId, String movieTitle, int days) {
-
-        Customer customer = findCustomer(customerId);
-        Movie movie = findMovie(movieTitle);
-        
-        if (customer == null || movie == null) {
-            System.out.println("Denied: Invalid customer or movie.");
-            return false;
-        }
-
-        int age = customer.getAge();
-        CustomerType type = customer.getType();
-        MovieRating rating = movie.getMovieRating();
-
-        if ((rating == MovieRating.R && age < 17) ||
-            (rating == MovieRating.PG_13 && age < 13) ||
-            (rating == MovieRating.PG_7 && age < 7)) {
-
-            System.out.println("Denied: Age restriction.");
-            return false;
-        }
-
-        if ((type == CustomerType.STANDARD && customer.getActiveRentals() >= 2) ||
-            (type == CustomerType.PREMIUM && customer.getActiveRentals() >= 5)) {
-
-            System.out.println("Denied: Maximum amount of rentals reached.");
-            return false;
-        }
-
-        if (!movie.rentMovie()) {
-            System.err.println("Denied: Movie not available.");
-            return false;
-        }
-
-        Renting newRent = new Renting(customer, movie, days);
-        rentals.add(newRent);
-
-        customer.addActiveRentals();
-        customer.addTotalRentals();
-
-        return true;
-    }
-
-    // Complete renting
-
-    public boolean completeRenting(String customerId, String movieId) {
-
-        for (Renting r : rentals) {
-
-            if (r.getCustomer().getId().equalsIgnoreCase(customerId) &&
-                r.getMovie().getMovieId().equalsIgnoreCase(movieId) &&
-                r.getStatus() == RentingStatus.ACTIVE) {
-
-                r.completeRenting();
-
+            if (m.rentMovie()) {
+                rentals.add(new Renting(c, m, days));
+                c.addActiveRentals();
+                c.addTotalRentals();
+                System.out.println("Rental successful!");
                 return true;
             }
         }
-
-        System.err.println("Error: ID/Name invalid or no active renting found.");
         return false;
     }
 
-    // Revenue
+    public boolean completeRenting(String customerId, String movieId) {
+        for (Renting r : rentals) {
+            if (r.getCustomer().getId().equalsIgnoreCase(customerId) && 
+                r.getMovie().getMovieId().equalsIgnoreCase(movieId) && 
+                r.getStatus() == RentingStatus.ACTIVE) {
+                r.completeRenting();
+                System.out.println("Movie returned successfully.");
+                return true;
+            }
+        }
+        System.out.println("Error: Active rental record not found.");
+        return false;
+    }
+
+    public void addEmployee(Employee e) { employees.add(e); }
 
     public double calculateRevenue() {
         double total = 0;
-
         for (Renting r : rentals) {
-            if (r.getStatus() == RentingStatus.ACTIVE ||
-                r.getStatus() == RentingStatus.COMPLETED) {
-
-                total += r.calculateCost();
-            }
+            if (r.getStatus() != RentingStatus.CANCELLED) total += r.calculateCost();
         }
         return total;
     }
 
-    // Statistics
-
     public String findTopCustomer() {
-
-        Customer topCustomer = customers.get(0);
-
+        if (customers.isEmpty()) return "No customers registered";
+        Customer top = customers.get(0);
         for (Customer c : customers) {
-
-            if (c.getTotalRentals() > topCustomer.getActiveRentals()) {
-                topCustomer = c;
-            }
+            if (c.getTotalRentals() > top.getTotalRentals()) top = c;
         }
-
-        return topCustomer.getName();
+        return top.getName();
     }
 
+    // REPORTS LOGIC
     public void saveReport() {
-
         try (PrintWriter writer = new PrintWriter(new FileWriter("MovieRentalsReport.txt"))) {
             writer.println("=== MOVIE RENTALS MANAGEMENT REPORT ===");
             writer.println("Total Revenue: $" + calculateRevenue());
