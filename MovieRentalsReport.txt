@@ -1,0 +1,9 @@
+=== MOVIE RENTALS MANAGEMENT REPORT ===
+Total Revenue: $0.0
+
+
+Total Movies Registered: 0
+Total Customers Registered: 0
+Top Customer: No customers registered
+Total Employees Employed: 0
+Total Rentals Processed: 0
